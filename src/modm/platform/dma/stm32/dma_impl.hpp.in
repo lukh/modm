@@ -23,6 +23,8 @@
 	%% elif id == 2
 		%% set streams = range(1,5)
 	%% endif
+%% elif target["family"] == "f0"
+	%% set streams = range(1,5)
 %% endif
 
 void
@@ -48,6 +50,13 @@ modm::platform::Dma{{ id }}::disable()
 	%% set length = stream ~ "->NDTR"
 	%% set prefix = "DMA_SxCR"
 %% elif target["family"] == "f3"
+	%% set channel = "DMA" ~ id ~ "_Channel" ~ stream_id
+	%% set reg = channel ~ "->CCR"
+	%% set mem = channel ~ "->CMAR"
+	%% set per = channel ~ "->CPAR"
+	%% set length = channel ~ "->CNDTR"
+	%% set prefix = "DMA_CCR"
+%% elif target["family"] == "f0"
 	%% set channel = "DMA" ~ id ~ "_Channel" ~ stream_id
 	%% set reg = channel ~ "->CCR"
 	%% set mem = channel ~ "->CMAR"
@@ -198,6 +207,8 @@ modm::platform::Dma{{ id }}::Stream{{ stream_id }}::configure(
 %% if target["family"] == "f4"
 	, FlowControl flow)
 %% elif target["family"] == "f3"
+	)
+%% elif target["family"] == "f0"
 	)
 %% endif
 {

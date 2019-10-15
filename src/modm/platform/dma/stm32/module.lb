@@ -46,8 +46,8 @@ def prepare(module, options):
         return False
 
     # FIXME the driver is referenced in STM32F0 device files, but appears only to support STM32F3/4
-    if device.identifier["family"] not in ["f3", "f4"]:
-        return False
+    # if device.identifier["family"] not in ["f3", "f4"]:
+    #     return False
 
     module.depends(":cmsis:device", ":platform:rcc")
 

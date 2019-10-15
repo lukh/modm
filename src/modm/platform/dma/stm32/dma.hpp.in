@@ -25,6 +25,8 @@
 	%% elif id == 2
 		%% set streams = range(1,5)
 	%% endif
+%% elif target["family"] == "f0"
+	%% set streams = range(1,5)
 %% endif
 
 namespace modm
@@ -66,6 +68,8 @@ public:
 			, MemoryBurstTransfer transfer = MemoryBurstTransfer::Single);
 		%% elif target["family"] == "f3"
 			);
+		%% elif target["family"] == "f0"
+			);
 		%% endif
 
 		/// will disable the stream
@@ -75,6 +79,8 @@ public:
 		%% if target["family"] == "f4"
 			, PeripheralBurstTransfer transfer = PeripheralBurstTransfer::Single);
 		%% elif target["family"] == "f3"
+			);
+		%% elif target["family"] == "f0"
 			);
 		%% endif
 	%% endfor
@@ -88,6 +94,8 @@ public:
 			, MemoryBurstTransfer transfer = MemoryBurstTransfer::Single);
 		%% elif target["family"] == "f3"
 			);
+		%% elif target["family"] == "f0"
+			);
 		%% endif
 
 		/// will disable the stream
@@ -97,6 +105,8 @@ public:
 		%% if target["family"] == "f4"
 			, PeripheralBurstTransfer transfer = PeripheralBurstTransfer::Single);
 		%% elif target["family"] == "f3"
+			);
+		%% elif target["family"] == "f0"
 			);
 		%% endif
 	%% endfor
@@ -116,6 +126,8 @@ public:
 		%% if target["family"] == "f4"
 			, FlowControl flow = FlowControl::Dma);
 		%% elif target["family"] == "f3"
+			);
+		%% elif target["family"] == "f0"
 			);
 		%% endif
 
