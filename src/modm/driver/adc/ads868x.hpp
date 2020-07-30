@@ -1,8 +1,7 @@
 // coding: utf-8
 // ----------------------------------------------------------------------------
 /*
- * Copyright (c) 2017, Christopher Durand
- * Copyright (c) 2018, Niklas Hauser
+ * Copyright (c) 2020, Vivien Henry
  *
  * This file is part of the modm project.
  *
@@ -12,8 +11,8 @@
  */
 // ----------------------------------------------------------------------------
 
-#ifndef MODM_AD7928_HPP
-#define MODM_AD7928_HPP
+#ifndef MODM_ADS868x_HPP
+#define MODM_ADS868x_HPP
 
 #include <modm/architecture/interface/spi_device.hpp>
 #include <modm/architecture/interface/accessor.hpp>
@@ -26,139 +25,209 @@
 namespace modm
 {
 
-/// @ingroup modm_driver_ad7928
-struct ad7928
+/// @ingroup modm_driver_ads868x
+struct ads868x
 {
 public:
-	/// Control register
+	/// Device ID register
 	enum class
-	ControlRegister : uint16_t
+	DeviceIDRegister : uint32_t
 	{
-		/// Enables writing to the control register
-		WriteControlReg = Bit15,
-
-		// bit 14: SEQ bit, see SequenceMode
-		// bit 13: don't care
-		// bit 12,11,10: channel selection, see InputChannel
-		// bit 9,8: power mode, see PowerMode
-		// bit 7: SHADOW bit, see SequenceMode
-		// bit 6: don't care
-
-		/// If this bit is set, the input range is 0..Vref,
-		/// else 0..2*Vref (4.75V < AVdd < 5.25V required)
-		VrefRange = Bit5,
-
-		/// Unsigned output, else two's complement signed output for
-		/// differential signals (output 0 for input Vref/2)
-		UnsignedOutput = Bit4
+		Addr0 = Bit16,
+		Addr1 = Bit17,
+		Addr2 = Bit18,
+		Addr3 = Bit19
 	};
 
-	MODM_FLAGS16(ControlRegister);
+	MODM_FLAGS32(DeviceIDRegister);
 
-	/// Sequence mode
+	typedef modm::Value<DeviceIDRegister_t, 4, 16> DeviceID_t;
+
+
+	// Reset and Power Control register
 	enum class
-	SequenceMode : uint16_t
+	ResetPowerControlRegister: uint32_t
 	{
-		/// Sequence mode disabled
-		NoSequence = 0,
+		WKey0 = Bit8,
+		WKey1 = Bit9,
+		WKey2 = Bit10,
+		WKey3 = Bit11,
+		WKey4 = Bit12,
+		WKey5 = Bit13,
+		WKey6 = Bit14,
+		WKey7 = Bit15,
 
-		/// If this bit is set, the next 2 bytes written to the device
-		/// will be clocked into the shadow register and non-continuous
-		/// sequence mode will be enabled
-		ProgramShadowRegister = Bit7,
+		VDDAlarmDisable = Bit5,
 
-		/// Continue the current sequence, conversion settings can be changed
-		ContinueSequence = Bit14,
-
-		/// Enable continuous sequence mode, not supported
-		ContinuousSequence = Bit14 | Bit7
+		InputAlarmDisable = Bit4,
+		RSTn_ApplicationReset = Bit2,
+		NapModeEnable = Bit1,
+		PowerDownEnable = Bit0
 	};
-	typedef modm::Configuration<ControlRegister_t, SequenceMode, Bit14 | Bit7> SequenceMode_t;
+	MODM_FLAGS32(ResetPowerControlRegister);
 
-	/// ADC input channels
+	typedef modm::Value<ResetPowerControlRegister_t, 8, 8> WriteKey_t;
+
+	// SDI Data Input Control register
 	enum class
-	InputChannel : uint8_t
+	SDIControlRegister: uint32_t
 	{
-		Ch0 = 0,
-		Ch1 = Bit0,
-		Ch2 = Bit1,
-		Ch3 = Bit1 | Bit0,
-		Ch4 = Bit2,
-		Ch5 = Bit2 | Bit0,
-		Ch6 = Bit2 | Bit1,
-		Ch7 = Bit2 | Bit1 | Bit0
+		SDIMode0 = Bit0,
+		SDIMode1 = Bit1
 	};
-	typedef modm::Configuration<ControlRegister_t, InputChannel, 0b111, 10> InputChannel_t;
+	MODM_FLAGS32(SDIControlRegister);
 
-	/// Power mode
+	enum class 
+	SDIMode : uint8_t
+	{
+		Std_Pol0_Phase0 = 0,
+		Std_Pol0_Phase1 = 1,
+		Std_Pol1_Phase0 = 2,
+		Std_Pol1_Phase1 = 3
+	};
+	typedef modm::Configuration<SDIControlRegister_t, SDIMode, 0b11, 0> SDIMode_t;
+
+	// SDO Data Output Control Register
 	enum class
-	PowerMode : uint8_t
+	SDOControlRegister: uint32_t
 	{
-		Normal = Bit1 | Bit0,
-		FullShutdown = Bit1,
-		AutoShutdown = Bit0
-	};
-	typedef modm::Configuration<ControlRegister_t, PowerMode, 0b11, 8> PowerMode_t;
+		SDOMode0 = Bit0,
+		SDOMode1 = Bit1,
 
-	/// Shadow register, used for channel selection in sequence mode
+		SSyncClock = Bit6,
+
+		SDO1Config0 = Bit8,
+		SDO1Config1 = Bit9,
+
+		GPOValue = Bit12
+	};
+	MODM_FLAGS32(SDOControlRegister);
+
 	enum class
-	ShadowRegister : uint16_t
-	{};
-	MODM_FLAGS16(ShadowRegister);
+	SDOMode: uint8_t
+	{
+		SameAsSDI0 = 0b00,
+		SameAsSDI0 = 0b01,
+		Invalid = 0b10,
+		ADCMasterClk_SourcSync = 0b11
+	};
+	typedef modm::Configuration<SDOControlRegister_t, SDOMode, 0b11, 0> SDOMode_t;
 
-	/// Configuration to select input channels for sequence conversion
+
 	enum class
-	SequenceChannels : uint8_t
+	SourceSyncClock: uint8_t
 	{
-		Ch0 = Bit7,
-		Ch1 = Bit6,
-		Ch2 = Bit5,
-		Ch3 = Bit4,
-		Ch4 = Bit3,
-		Ch5 = Bit2,
-		Ch6 = Bit1,
-		Ch7 = Bit0
+		External = 0,
+		Internal = 1
 	};
-	MODM_FLAGS8(SequenceChannels);
+	typedef modm::Configuration<SDOControlRegister_t, SourceSyncClock, 0b1, 6> SourceSyncClock_t;
 
-	typedef modm::Configuration<ShadowRegister_t, SequenceChannels, 0xFF, 8> Sequence1Channels_t;
-	typedef modm::Configuration<ShadowRegister_t, SequenceChannels, 0xFF, 0> Sequence2Channels_t;
-
-	using Register_t = modm::FlagsGroup<ControlRegister_t, ShadowRegister_t>;
-
-	struct modm_packed
-	Data
+	enum class
+	SDO1Config: uint8_t
 	{
-		/// @return 12 bit result, for AD7918 and AD7908, respectively, 4 or 2 LSB are 0
-		inline uint16_t
-		value() const
-		{
-			return (data[1] & 0xFF) | ((static_cast<uint16_t>(data[0] & 0b1111)) << 8);
-		}
-
-		/// @return adc input channel
-		inline InputChannel
-		channel() const
-		{
-			return static_cast<InputChannel>((data[0] & 0b01110000) >> 4);
-		}
-
-		uint8_t data[2];
+		SDO1_Tristated = 0b00,
+		SDO1_Alarm = 0b01,
+		SDO1_GPO = 0b10,
+		SDO1_2BitsSDO = 0b11
 	};
-}; // struct ad7928
+	typedef modm::Configuration<SDOControlRegister_t, SDO1Config, 0b1, 8> SourceSyncClock_t;
+
+
+	enum class
+	DataOutControlRegister: uint32_t
+	{
+		DataVal0 = Bit0,
+		DataVal1 = Bit1,
+		DataVal2 = Bit2,
+
+		ParityEnable = Bit3
+
+		Inc_Range = Bit8,
+
+		Inc_InActiveAlarm_High = Bit10,
+		Inc_InActiveAlarm1_Low = Bit11,
+
+		Inc_VDDActiveAlarm0_High = Bit12,
+		Inc_VDDActiveAlarm1_Low = Bit13,
+
+		Inc_DeviceAddr = Bit14
+	};
+	MODM_FLAGS32(DataOutControlRegister);
+
+	enum class
+	DataValue: uint8_t
+	{
+		ConversionData = 0b000,
+		All0 = 0b100,
+		All1 = 0b101,
+		Seq01 = 0b110,
+		Seq0011 = 0b111
+	};
+	typedef modm::Configuration<DataOutControlRegister_t, DataValue, 0b111, 0> DataValue_t;
+
+
+	enum class
+	RangeSelectionRegister: uint32_t
+	{
+		RangeSel0 = Bit0,
+		RangeSel1 = Bit1,
+		RangeSel2 = Bit2,
+		RangeSel3 = Bit3,
+
+		InternalRefDisabled = Bit6
+	};
+	MODM_FLAGS32(RangeSelectionRegister);
+
+	enum class
+	RangeSel: uint8_t
+	{
+		Range_Bipolar_3_000_VRef = 0b0000,
+		Range_Bipolar_2_500_VRef = 0b0001,
+		Range_Bipolar_1_500_VRef = 0b0010,
+		Range_Bipolar_1_250_VRef = 0b0011,
+		Range_Bipolar_0_625_VRef = 0b0100,
+		Range_Unipolar_3_00_VRef = 0b1000,
+		Range_Unipolar_2_50_VRef = 0b1001,
+		Range_Unipolar_1_50_VRef = 0b1010,
+		Range_Unipolar_1_25_VRef = 0b1011
+	};
+	typedef modm::Configuration<RangeSelectionRegister_t, RangeSel, 0b1111, 0> RangeSel_t;
+
+
+
+	// struct modm_packed
+	// Data
+	// {
+	// 	/// @return 12 bit result, for AD7918 and AD7908, respectively, 4 or 2 LSB are 0
+	// 	inline uint16_t
+	// 	value() const
+	// 	{
+	// 		return (data[1] & 0xFF) | ((static_cast<uint16_t>(data[0] & 0b1111)) << 8);
+	// 	}
+
+	// 	/// @return adc input channel
+	// 	inline InputChannel
+	// 	channel() const
+	// 	{
+	// 		return static_cast<InputChannel>((data[0] & 0b01110000) >> 4);
+	// 	}
+
+	// 	uint8_t data[2];
+	// };
+}; // struct ads868x
 
 /**
  * @tparam	SpiMaster	SpiMaster interface
  * @tparam	Cs			Chip-select pin
  *
- * @author	Christopher Durand
- * @ingroup modm_driver_ad7928
+ * @author	Vivien Henry
+ * @ingroup modm_driver_ads868x
  */
 template <typename SpiMaster, typename Cs>
-class Ad7928 : public ad7928, public modm::SpiDevice<SpiMaster>, protected modm::NestedResumable<3>
+class Ads868x : public ads868x, public modm::SpiDevice<SpiMaster>, protected modm::NestedResumable<3>
 {
 public:
-	Ad7928();
+	Ads868x();
 
 	/// Call this function once before using the device
 	modm::ResumableResult<void>
@@ -228,4 +297,4 @@ operator<<(IOStream& out, const ad7928::Data& data);
 
 #include "ad7928_impl.hpp"
 
-#endif // MODM_AD7928_HPP
+#endif // MODM_ADS868x_HPP
