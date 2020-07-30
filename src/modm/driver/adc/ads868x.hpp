@@ -14,6 +14,7 @@
 #ifndef MODM_ADS868x_HPP
 #define MODM_ADS868x_HPP
 
+
 #include <modm/architecture/interface/spi_device.hpp>
 #include <modm/architecture/interface/accessor.hpp>
 #include <modm/architecture/interface/register.hpp>
@@ -29,6 +30,20 @@ namespace modm
 struct ads868x
 {
 public:
+	enum class
+	Register: uint8_t{
+		DEV_ID_REG = 0x00,
+		RST_PWRCTRL_REG = 0x04,
+		SDI_CTL_REG = 0x08,
+		SDO_CTL_REG = 0x0C,
+		DATAOUT_CTL_REG = 0x10,
+		RANGE_CTL_REG = 0x14,
+		ALARM_REG = 0x20,
+		ALARM_H_TH_REG = 0x24,
+		ALARM_L_TH_REG = 0x28,
+	}
+
+
 	/// Device ID register
 	enum class
 	DeviceIDRegister : uint32_t
@@ -38,7 +53,6 @@ public:
 		Addr2 = Bit18,
 		Addr3 = Bit19
 	};
-
 	MODM_FLAGS32(DeviceIDRegister);
 
 	typedef modm::Value<DeviceIDRegister_t, 4, 16> DeviceID_t;
@@ -196,24 +210,11 @@ public:
 
 
 	// struct modm_packed
-	// Data
-	// {
-	// 	/// @return 12 bit result, for AD7918 and AD7908, respectively, 4 or 2 LSB are 0
-	// 	inline uint16_t
-	// 	value() const
-	// 	{
-	// 		return (data[1] & 0xFF) | ((static_cast<uint16_t>(data[0] & 0b1111)) << 8);
-	// 	}
+	Data
+	{
+		uint8_t data[4];
+	};
 
-	// 	/// @return adc input channel
-	// 	inline InputChannel
-	// 	channel() const
-	// 	{
-	// 		return static_cast<InputChannel>((data[0] & 0b01110000) >> 4);
-	// 	}
-
-	// 	uint8_t data[2];
-	// };
 }; // struct ads868x
 
 /**
@@ -224,70 +225,24 @@ public:
  * @ingroup modm_driver_ads868x
  */
 template <typename SpiMaster, typename Cs>
-class Ads868x : public ads868x, public modm::SpiDevice<SpiMaster>, protected modm::NestedResumable<3>
+class Ads868x : public ads868x
 {
 public:
 	Ads868x();
 
 	/// Call this function once before using the device
-	modm::ResumableResult<void>
-	initialize();
+	void initialize();
 
 	/// Initiate a single conversion and return the result of the previous conversion
 	/// A running sequence will be aborted.
 	/// If the device is in full shutdown, it will be woken up.
-	modm::ResumableResult<Data>
-	singleConversion(InputChannel channel);
+	void singleConversion(InputChannel channel);
 
-	/// Start a conversion sequence.
-	/// The device will automatically cycle through the specified channels, starting
-	/// with the lowest channel index in sequence1, when nextSequenceConversion() is called.
-	modm::ResumableResult<void>
-	startSequence(SequenceChannels_t channels1, SequenceChannels_t channels2 = SequenceChannels_t(0));
-
-	/// Perform the next sequence conversion
-	/// The result is undefined if the device is not in sequence mode or not in normal power mode.
-	modm::ResumableResult<Data>
-	nextSequenceConversion();
-
-	/// Enable extended range mode (0V < input < 2*Vref)
-	/// The configuration will be applied after the next conversion
-	/// Default mode: (0V < input < Vref)
-	void
-	setExtendedRange(bool enabled);
-
-	/// Test if extended range mode is enabled
-	bool
-	isExtendedRange();
-
-	/// Shutdown device after each conversion, not supported in sequence mode
-	void
-	setAutoShutdownEnabled(bool enabled);
-
-	/// Test if auto-shutdown is enabled
-	bool
-	isAutoShutdownEnabled();
-
-	/// Shutdown device
-	/// Calling wakeup() or initiating a conversion will wake up the device
-	modm::ResumableResult<void>
-	fullShutdown();
-
-	/// Wake up the device from full shutdown mode
-	modm::ResumableResult<void>
-	wakeup();
 
 private:
-	modm::ResumableResult<void>
-	transfer(Register_t reg);
+	void writeRegister(Register reg, uint32_t data);
+	uint32_t readRegister(Register reg);
 
-	ControlRegister_t config;
-	ShadowRegister_t sequenceChannels;
-
-	uint8_t outBuffer[2];
-	Data data;
-
-	PowerMode currentPowerMode;
 };
 
 IOStream&
