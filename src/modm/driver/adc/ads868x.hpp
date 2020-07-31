@@ -15,7 +15,7 @@
 #define MODM_ADS868x_HPP
 
 
-#include <modm/architecture/interface/spi_device.hpp>
+#include <modm/architecture/interface/spi_master.hpp>
 #include <modm/architecture/interface/accessor.hpp>
 #include <modm/architecture/interface/register.hpp>
 #include <modm/architecture/interface/gpio.hpp>
@@ -41,7 +41,7 @@ public:
 		ALARM_REG = 0x20,
 		ALARM_H_TH_REG = 0x24,
 		ALARM_L_TH_REG = 0x28,
-	}
+	};
 
 
 	/// Device ID register
@@ -121,7 +121,7 @@ public:
 	SDOMode: uint8_t
 	{
 		SameAsSDI0 = 0b00,
-		SameAsSDI0 = 0b01,
+		SameAsSDI1 = 0b01,
 		Invalid = 0b10,
 		ADCMasterClk_SourcSync = 0b11
 	};
@@ -144,7 +144,7 @@ public:
 		SDO1_GPO = 0b10,
 		SDO1_2BitsSDO = 0b11
 	};
-	typedef modm::Configuration<SDOControlRegister_t, SDO1Config, 0b1, 8> SourceSyncClock_t;
+	typedef modm::Configuration<SDOControlRegister_t, SDO1Config, 0b1, 8> SDO1Config_t;
 
 
 	enum class
@@ -154,7 +154,7 @@ public:
 		DataVal1 = Bit1,
 		DataVal2 = Bit2,
 
-		ParityEnable = Bit3
+		ParityEnable = Bit3,
 
 		Inc_Range = Bit8,
 
@@ -209,7 +209,7 @@ public:
 
 
 
-	// struct modm_packed
+	struct modm_packed
 	Data
 	{
 		uint8_t data[4];
@@ -236,7 +236,7 @@ public:
 	/// Initiate a single conversion and return the result of the previous conversion
 	/// A running sequence will be aborted.
 	/// If the device is in full shutdown, it will be woken up.
-	void singleConversion(InputChannel channel);
+	// void singleConversion(InputChannel channel);
 
 
 private:
@@ -245,11 +245,11 @@ private:
 
 };
 
-IOStream&
-operator<<(IOStream& out, const ad7928::Data& data);
+// IOStream&
+// operator<<(IOStream& out, const ad7928::Data& data);
 
 } // namespace modm
 
-#include "ad7928_impl.hpp"
+#include "ads868x_impl.hpp"
 
 #endif // MODM_ADS868x_HPP

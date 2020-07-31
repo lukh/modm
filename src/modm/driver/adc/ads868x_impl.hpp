@@ -26,14 +26,14 @@ void Ads868x<SpiMaster, Cs>::writeRegister(Register reg, uint32_t data){
 	Cs::reset();
 
 	// LSB (0-15)
-	cmd = (0b11010'00 << 25) | (static_cast<uint8_t>(reg) << 16) | (data && 0xFFFF);
+	cmd = (0b11010'00 << 25) | (static_cast<uint8_t>(reg) << 16) | (data & 0xFFFF);
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 24));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 16));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 8));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 0));
 
 	// MSB (16-31)
-	cmd = (0b11010'00 << 25) | (static_cast<uint8_t>(reg + 2) << 16) | (data >> 16);
+	cmd = (0b11010'00 << 25) | ((static_cast<uint8_t>(reg) + 2) << 16) | (data >> 16);
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 24));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 16));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 8));
@@ -50,7 +50,7 @@ uint32_t Ads868x<SpiMaster, Cs>::readRegister(Register reg){
 	Cs::reset();
 
 	// MSB (31-16)
-	cmd = (0b11001'00 << 25) | (static_cast<uint8_t>(reg + 2) << 16);
+	cmd = (0b11001'00 << 25) | ((static_cast<uint8_t>(reg) + 2) << 16);
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 24));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 16));
 	SpiMaster::transferBlocking((uint8_t)(cmd >> 8));

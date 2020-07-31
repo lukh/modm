@@ -11,14 +11,14 @@
  */
 // ----------------------------------------------------------------------------
 
-#include "ad7928.hpp"
+#include "ads868x.hpp"
 
-// ----------------------------------------------------------------------------
-modm::IOStream&
-modm::operator<<(modm::IOStream& out, const modm::ad7928::Data& data)
-{
-	out	<< "(channel = " << static_cast<uint16_t>(data.channel())
-		<< ", value = " << data.value() << ")";
+// // ----------------------------------------------------------------------------
+// modm::IOStream&
+// modm::operator<<(modm::IOStream& out, const modm::ad7928::Data& data)
+// {
+// 	out	<< "(channel = " << static_cast<uint16_t>(data.channel())
+// 		<< ", value = " << data.value() << ")";
 
-	return out;
-}
+// 	return out;
+// }
